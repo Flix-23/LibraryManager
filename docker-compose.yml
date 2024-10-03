@@ -1,0 +1,184 @@
+version: '4'
+services:
+
+ zookeeper:
+   image: confluentinc/cp-zookeeper:latest
+   container_name: zookeeper
+   environment:
+     ZOOKEEPER_CLIENT_PORT: 2181
+     ZOOKEEPER_TICK_TIME: 2000
+   ports:
+     - "2181:2181"
+
+ broker:
+   image: confluentinc/cp-kafka:latest
+   container_name: broker
+   depends_on:
+      - zookeeper
+   ports:
+     - "29092:29092"
+   environment:
+     KAFKA_BROKER_ID: 1
+     KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+     KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:9092,PLAINTEXT_HOST://localhost:29092
+     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+     KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+     KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+     KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+
+ zipkin:
+   image: openzipkin/zipkin:2.24.3
+   container_name: zipkin
+   restart: unless-stopped
+   ports:
+     - "9411:9411"
+   networks:
+     - loki-net
+
+ prometheus:
+   container_name: prometheus-service
+   image: prom/prometheus
+   restart: always
+   extra_hosts:
+     - host.docker.internal:host-gateway
+   command:
+     - --config.file=/etc/prometheus/prometheus.yml
+   volumes:
+     - ./files/prometheus.yml:/etc/prometheus/prometheus.yml
+   ports:
+     - "9090:9090"
+   networks:
+     - loki-net
+
+ loki:
+   image: grafana/loki:latest
+   ports:
+     - "3100:3100"
+   volumes:
+     - loki-data:/tmp/loki
+   networks:
+     - loki-net
+
+ promtail:
+   image: grafana/promtail:latest
+   volumes:
+     - /var/log:/var/log
+     - /var/lib/docker/containers:/var/lib/docker/containers:ro
+     - ./files/promtail-config.yml:/etc/promtail/promtail-config.yml:ro
+   command: -config.file=/etc/promtail/promtail-config.yml
+   depends_on:
+     - loki
+   networks:
+     - loki-net
+
+
+ grafana:
+   container_name: grafana
+   image: grafana/grafana-oss:10.4.9
+   restart: unless-stopped
+   ports:
+     - "3000:3000"
+   extra_hosts:
+     - "host.docker.interval:host-gateway"
+   links:
+     - prometheus
+   volumes:
+     - ./files/grafana:/var/lib/grafana
+   environment:
+     GF_SECURITY_ADMIN_PASSWORD: admin
+     GF_SECURITY_ADMIN_USER: admin
+   depends_on:
+     - prometheus
+     - loki
+   networks:
+     - loki-net
+
+ db-authors:
+  container_name: db-authors
+  image: mysql:8.0.33
+  restart: unless-stopped
+  environment:
+    MYSQL_DATABASE: lb_authors
+    MYSQL_USER: root
+    MYSQL_PASSWORD: M19-0083
+  ports:
+    - "3307:3306"
+  expose:
+    - 3306
+  networks:
+    - loki-net
+
+ db-books:
+   container_name: db-books
+   image: postgres:16.4
+   restart: unless-stopped
+   environment:
+     POSTGRES_DB: lb_books
+     POSTGRES_USER: postgres
+     POSTGRES_PASSWORD: M19-0083
+   ports:
+     - "5433:5433"
+   expose:
+     - 5433
+   command: -p 5433
+   networks:
+     - loki-net
+
+
+ db-loans:
+  container_name: db-loans
+  image: postgres:16.4
+  restart: unless-stopped
+  environment:
+    POSTGRES_DB: lb_loans
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: M19-0083
+  ports:
+    - "5431:5431"
+  expose:
+    - 5431
+  command: -p 5431
+  networks:
+    - loki-net
+
+
+ db-users:
+  container_name: db-users
+  image: postgres:16.4
+  restart: unless-stopped
+  environment:
+    POSTGRES_DB: lb_users
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: M19-0083
+  ports:
+    - "5434:5434"
+  expose:
+    - 5434
+  command: -p 5434
+  networks:
+    - loki-net
+
+
+ book-reviews:
+    image: mongo:latest
+    container_name: book-reviews
+    restart: always
+    ports:
+      - "27017:27017"
+    networks:
+      - loki-net
+
+networks:
+  loki-net:
+    driver: bridge
+
+volumes:
+  loki-data:
+
+
+
+
+
+
+

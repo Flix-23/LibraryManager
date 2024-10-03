@@ -1,0 +1,39 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+scrape_configs:
+  - job_name: 'user-service'
+    metrics_path: '/actuator/user/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8080']
+        labels:
+          application: 'User Service'
+
+  - job_name: 'author-service'
+    metrics_path: '/actuator/author/prometheus'
+    static_configs:
+      - targets: [ 'host.docker.internal:8083' ]
+        labels:
+          application: 'Author Service'
+
+  - job_name: 'book-service'
+    metrics_path: '/actuator/book/prometheus'
+    static_configs:
+      - targets: [ 'host.docker.internal:8082' ]
+        labels:
+          application: 'Book Service'
+
+  - job_name: 'review-service'
+    metrics_path: '/actuator/review/prometheus'
+    static_configs:
+      - targets: [ 'host.docker.internal:8084' ]
+        labels:
+          application: 'Review Service'
+
+
+  - job_name: 'loan-service'
+    metrics_path: '/actuator/loan/prometheus'
+    static_configs:
+      - targets: [ 'host.docker.internal:8081' ]
+        labels:
+          application: 'Loan Service'
