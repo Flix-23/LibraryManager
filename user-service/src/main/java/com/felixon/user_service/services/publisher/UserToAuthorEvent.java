@@ -1,4 +1,4 @@
-package com.felixon.user_service.services.event_publication;
+package com.felixon.user_service.services.publisher;
 
 import com.felixon.user_service.models.dtos.UserEvent;
 import org.springframework.beans.factory.annotation.Autowired;

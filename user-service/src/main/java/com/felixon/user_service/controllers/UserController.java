@@ -1,6 +1,8 @@
 package com.felixon.user_service.controllers;
 
 import com.felixon.user_service.helper.ValidationHelper;
+import com.felixon.user_service.models.dtos.UserRequest;
+import com.felixon.user_service.models.dtos.UserResponse;
 import com.felixon.user_service.models.entities.User;
 import com.felixon.user_service.services.UserService;
 import jakarta.validation.Valid;
@@ -11,31 +13,30 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/api/v1/user")
 public class UserController extends ValidationHelper {
 
     @Autowired
     private UserService userService;
 
     @GetMapping
-    public List<User> getAllUser(){
+    public List<UserResponse> getAllUser(){
         return userService.getAllUser();
     }
 
     @GetMapping("/{name}")
-    public ResponseEntity<User> findUserByName(@PathVariable String name){
-        Optional<User> optionalUser = userService.findUserByName(name);
-        if (optionalUser.isPresent()){
-            return ResponseEntity.ok(optionalUser.orElseThrow());
+    public ResponseEntity<UserResponse> findUserByName(@PathVariable String name){
+        UserResponse userResponse = userService.findUserByName(name);
+        if (userResponse != null){
+            return ResponseEntity.ok(userResponse);
         }
         return ResponseEntity.notFound().build();
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> userRegister(@Valid @RequestBody User user, BindingResult result){
+    public ResponseEntity<?> userRegister(@Valid @RequestBody UserRequest user, BindingResult result){
         if(result.hasFieldErrors()){
             return validationError(result);
         }
@@ -44,17 +45,26 @@ public class UserController extends ValidationHelper {
     }
 
     @PutMapping("/update/{username}")
-    public ResponseEntity<?> updateUser(@PathVariable String username, @Valid @RequestBody User user, BindingResult result){
+    public ResponseEntity<?> updateUser(@PathVariable String username, @Valid @RequestBody UserRequest userRequest, BindingResult result){
         if(result.hasFieldErrors()){
             return validationError(result);
         }
         
-        Optional<User> optionalUser = userService.updateUser(username, user);
+        UserResponse userResponse = userService.updateUser(username, userRequest);
 
-        if (optionalUser.isPresent()){
-            return ResponseEntity.status(HttpStatus.CREATED).body(optionalUser.orElseThrow());
+        if (userResponse != null){
+            return ResponseEntity.status(HttpStatus.CREATED).body(userResponse);
         }
 
+        return ResponseEntity.notFound().build();
+    }
+
+    @DeleteMapping("/delete/{username}")
+    public ResponseEntity<UserResponse> deleteUser(@PathVariable String username){
+        UserResponse userResponse = userService.deleteUser(username);
+        if (userResponse != null){
+            return ResponseEntity.ok(userResponse);
+        }
         return ResponseEntity.notFound().build();
     }
 

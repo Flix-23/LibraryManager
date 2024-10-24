@@ -1,4 +1,4 @@
-package com.felixon.author_service.services;
+package com.felixon.author_service.services.publisher;
 
 import com.felixon.author_service.models.dtos.AuthorEvent;
 import org.springframework.beans.factory.annotation.Autowired;

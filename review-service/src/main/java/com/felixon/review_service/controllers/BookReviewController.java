@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/review")
+@RequestMapping("/api/v1/review")
 public class BookReviewController {
 
     @Autowired
@@ -30,31 +30,31 @@ public class BookReviewController {
         return reviewService.getAllReview();
     }
 
-    @GetMapping("/{title}")
-    public ResponseEntity<BookReview> findReviewByTitle(@PathVariable String title){
-        Optional<BookReview> optionalBookReview = reviewService.findReviewByTitle(title);
-        if (optionalBookReview.isPresent()){
-            return ResponseEntity.ok(optionalBookReview.orElseThrow());
+    @GetMapping("/title/{title}")
+    public ResponseEntity<BookReviewResponse> findReviewByTitle(@PathVariable String title){
+        BookReviewResponse bookReviewResponse = reviewService.findReviewByTitle(title);
+        if (bookReviewResponse != null){
+            return ResponseEntity.ok(bookReviewResponse);
         }
         return ResponseEntity.notFound().build();
     }
 
     @PutMapping("/update/{username}")
-    public ResponseEntity<?> updateBookReview(@PathVariable String username, @RequestBody BookReviewRequest bookReviewRequest){
-        Optional<BookReview> optionalBookReview = reviewService.updateReview(username, bookReviewRequest);
+    public ResponseEntity<BookReviewResponse> updateBookReview(@PathVariable String username, @RequestBody BookReviewRequest bookReviewRequest){
+        BookReviewResponse bookReviewResponse = reviewService.updateReview(username, bookReviewRequest);
 
-        if (optionalBookReview.isPresent()){
-            return ResponseEntity.status(HttpStatus.CREATED).body(optionalBookReview.orElseThrow());
+        if (bookReviewResponse != null){
+            return ResponseEntity.status(HttpStatus.CREATED).body(bookReviewResponse);
         }
         return ResponseEntity.notFound().build();
     }
 
-    @DeleteMapping("/{username}")
-    public ResponseEntity<BookReview> deleteReview(@PathVariable String username){
-        Optional<BookReview> optionalBookReview = reviewService.deleteReview(username);
+    @DeleteMapping("/delete/{username}")
+    public ResponseEntity<BookReviewResponse> deleteReview(@PathVariable String username){
+        BookReviewResponse bookReviewResponse = reviewService.deleteReview(username);
 
-        if (optionalBookReview.isPresent()){
-            return ResponseEntity.ok(optionalBookReview.orElseThrow());
+        if (bookReviewResponse != null){
+            return ResponseEntity.ok(bookReviewResponse);
         }
         return ResponseEntity.notFound().build();
     }

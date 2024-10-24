@@ -1,13 +1,14 @@
 package com.felixon.user_service.services;
 
-import com.felixon.user_service.models.entities.User;
+import com.felixon.user_service.models.dtos.UserRequest;
+import com.felixon.user_service.models.dtos.UserResponse;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface UserService {
-    List<User> getAllUser();
-    User addUser(User user);
-    Optional<User> findUserByName(String Username);
-    Optional<User> updateUser(String username, User user);
+    List<UserResponse> getAllUser();
+    UserResponse addUser(UserRequest userRequest);
+    UserResponse findUserByName(String Username);
+    UserResponse updateUser(String username, UserRequest userRequest);
+    UserResponse deleteUser(String username);
 }

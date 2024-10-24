@@ -9,6 +9,8 @@ target/
 *.ear
 *.class
 
+.env
+/target
 
 ### STS ###
 .apt_generated
@@ -25,7 +27,6 @@ target/
 *.iml
 *.ipr
 
-.env
 
 ### NetBeans ###
 /nbproject/private/

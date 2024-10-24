@@ -19,8 +19,8 @@ public class Author {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long Id;
 
-    @NotBlank
     @Size(min = 4, max = 16)
+    @Column(unique = true)
     private String name;
     @NotBlank
     private String email;
@@ -35,6 +35,7 @@ public class Author {
         return "Author{" +
                 "Id=" + Id +
                 ", name='" + name + '\'' +
+                ", email='" + email + '\'' +
                 ", biography='" + biography + '\'' +
                 ", nationality='" + nationality + '\'' +
                 '}';

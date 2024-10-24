@@ -3,6 +3,7 @@ package com.felixon.user_service.models.entities;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -22,14 +23,17 @@ public class User {
 
     @NotBlank
     @Column(unique = true)
+    @Size(min = 4,max = 30)
     private String username;
     @NotBlank
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @Size(min = 4)
     private String password;
     @Column(name = "registration_date")
     private LocalDate registrationDate;
 
     private boolean enable;
+
 
     @Transient
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
@@ -48,9 +52,6 @@ public class User {
     inverseJoinColumns = @JoinColumn(name = "role_id"),
     uniqueConstraints = { @UniqueConstraint(columnNames ={ "user_id", "role_id" })})
     private Set<Role> roles;
-
-
-
 
 
 }

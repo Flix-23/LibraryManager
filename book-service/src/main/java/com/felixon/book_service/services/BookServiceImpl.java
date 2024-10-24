@@ -4,7 +4,10 @@ import com.felixon.book_service.models.dtos.BookEvent;
 import com.felixon.book_service.models.dtos.BookRequest;
 import com.felixon.book_service.models.dtos.BookResponse;
 import com.felixon.book_service.repositories.BookRepository;
+import com.felixon.book_service.services.consumer.AuthorEventConsumer;
+import com.felixon.book_service.services.publisher.BookEventPublisher;
 import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.felixon.book_service.models.entities.Book;
@@ -23,88 +26,77 @@ public class BookServiceImpl implements BookService{
     @Autowired
     private BookEventPublisher eventPublisher;
 
+    private ModelMapper model = new ModelMapper();
+
 
     @Transactional
     @Override
-    public void addBook(BookRequest bookRequest){
-            var book = Book.builder()
-                    .title(bookRequest.getTitle())
-                    .gender(bookRequest.getGender())
-                    .datePublication(bookRequest.getDatePublication())
-                    .authorName(AuthorEventConsumer.authorEventName)
-                    .available(bookRequest.isAvailable())
-                    .build();
+    public BookResponse addBook(BookRequest bookRequest){
+        bookRequest.setAuthorName(AuthorEventConsumer.authorEventName);
+        var book = model.map(bookRequest, Book.class);
 
-        Book bookToEvent = this.bookRepository.save(book);
+        this.bookRepository.save(book);
 
-        log.info("Book added {}", book);
+        this.eventPublisher.publishBook(new BookEvent(book.getTitle(),
+                book.getGender(), book.getAuthorName()));
 
-        this.eventPublisher.publishBook(new BookEvent(bookToEvent.getTitle(),
-                bookToEvent.getGender(), bookToEvent.getAuthorName()));
-
+        return model.map(book, BookResponse.class);
     }
 
     @Transactional(readOnly = true)
     @Override
     public List<BookResponse> findAllBook(){
-        var books = bookRepository.findAllBook();
+        var books = bookRepository.findAll();
 
         return books.stream().map(this::mapToBookResponse).toList();
     }
 
     private BookResponse mapToBookResponse(Book book){
-        var bookResponse = BookResponse.builder()
-                .id(book.getId())
-                .title(book.getTitle())
-                .gender(book.getGender())
-                .datePublication(book.getDatePublication())
-                .authorName(book.getAuthorName())
-                .available(book.isAvailable())
-                .build();
-
-        return bookResponse;
+        return model.map(book, BookResponse.class);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<Book> findBookByTitle(String title){
-
-        return this.bookRepository.findByTitle(title);
+    public BookResponse findBookByTitle(String title){
+        Optional<Book> book = this.bookRepository.findByTitle(title);
+        return model.map(book, BookResponse.class);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<Book> findBookByGender(String gender) {
-        return this.bookRepository.findByGender(gender);
+    public BookResponse findBookByGender(String gender) {
+        Optional<Book> book = this.bookRepository.findByGender(gender);
+        return model.map(book, BookResponse.class);
     }
 
     @Override
-    public Optional<Book> findBookByAuthor(String authorName) {
-        return this.bookRepository.findByAuthorName(authorName);
+    public BookResponse findBookByAuthor(String authorName) {
+        Optional<Book> book = this.bookRepository.findByAuthorName(authorName);
+        return model.map(book, BookResponse.class);
     }
 
     @Override
     @Transactional
-    public Optional<Book> updateBook(String title, BookRequest bookRequest) {
+    public BookResponse updateBook(String title, BookRequest bookRequest) {
         Optional<Book> optionalBook = bookRepository.findByTitle(title);
         if(optionalBook.isPresent()){
             Book bookDB = optionalBook.orElseThrow();
             bookDB.setTitle(bookRequest.getTitle());
             bookDB.setGender(bookRequest.getGender());
             bookDB.setAvailable(bookRequest.isAvailable());
-            return Optional.of(bookRepository.save(bookDB));
+            bookRepository.save(bookDB);
         }
-        return optionalBook;
+        return model.map(optionalBook, BookResponse.class);
     }
 
     @Override
     @Transactional
-    public Optional<Book> deleteBook(String title) {
+    public BookResponse deleteBook(String title) {
         Optional<Book> optionalBook = bookRepository.findByTitle(title);
 
         optionalBook.ifPresent(bookRepository::delete);
 
-        return optionalBook;
+        return model.map(optionalBook, BookResponse.class);
     }
 
 

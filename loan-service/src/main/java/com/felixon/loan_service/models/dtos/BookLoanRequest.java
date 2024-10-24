@@ -1,5 +1,6 @@
 package com.felixon.loan_service.models.dtos;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,8 +13,12 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @Builder
 public class BookLoanRequest {
+    @NotBlank
     private String username;
+    @NotBlank
     private String bookTitle;
+    @NotBlank
     private LocalDate loanDate;
+    @NotBlank
     private boolean returned;
 }

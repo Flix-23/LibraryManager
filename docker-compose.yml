@@ -23,7 +23,7 @@ services:
      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:9092,PLAINTEXT_HOST://localhost:29092
      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
 
@@ -102,10 +102,13 @@ services:
     MYSQL_DATABASE: ${MYSQL_DB}
     MYSQL_USER: ${MYSQL_USER}
     MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    SPRING_REDIS_HOST: redis
   ports:
     - "3307:3306"
   expose:
     - 3306
+  depends_on:
+    - redis
   networks:
     - loki-net
 
@@ -117,11 +120,14 @@ services:
      POSTGRES_DB: ${POSTGRES1_DB}
      POSTGRES_USER: ${POSTGRES1_USER}
      POSTGRES_PASSWORD: ${POSTGRES1_PASSWORD}
+     SPRING_REDIS_HOST: redis
    ports:
      - "5433:5433"
    expose:
      - 5433
    command: -p 5433
+   depends_on:
+     - redis
    networks:
      - loki-net
 
@@ -134,11 +140,14 @@ services:
     POSTGRES_DB: ${POSTGRES2_DB}
     POSTGRES_USER: ${POSTGRES2_USER}
     POSTGRES_PASSWORD: ${POSTGRES2_PASSWORD}
+    SPRING_REDIS_HOST: redis
   ports:
     - "5431:5431"
   expose:
     - 5431
   command: -p 5431
+  depends_on:
+    - redis
   networks:
     - loki-net
 
@@ -151,11 +160,14 @@ services:
     POSTGRES_DB: ${POSTGRES3_DB}
     POSTGRES_USER: ${POSTGRES3_USER}
     POSTGRES_PASSWORD: ${POSTGRES3_PASSWORD}
+    SPRING_REDIS_HOST: redis
   ports:
     - "5434:5434"
   expose:
     - 5434
   command: -p 5434
+  depends_on:
+    - redis
   networks:
     - loki-net
 
@@ -166,14 +178,31 @@ services:
     restart: always
     ports:
       - "27017:27017"
+    depends_on:
+      - redis
+    environment:
+      - SPRING_REDIS_HOST = redis
     networks:
       - loki-net
+
+
+ redis:
+   image: redis:latest
+   container_name: redis
+   restart: always
+   ports:
+     - "6379:6379"
+   volumes:
+     - redis_volumes_data:/data
+   networks:
+     - loki-net
 
 networks:
   loki-net:
     driver: bridge
 
 volumes:
+  redis_volumes_data:
   loki-data:
 
 

@@ -1,8 +1,6 @@
-package com.felixon.author_service.services;
+package com.felixon.author_service.services.consumer;
 
-import com.felixon.author_service.models.dtos.AuthorRequest;
 import com.felixon.author_service.models.dtos.UserEvent;
-import com.felixon.author_service.models.entities.Author;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;

@@ -1,9 +1,7 @@
 package com.felixon.review_service.services.consumer;
 
 
-import com.felixon.review_service.models.dtos.BookEventDto;
-import com.felixon.review_service.models.dtos.BookReviewRequest;
-import com.felixon.review_service.services.BookReviewServiceImpl;
+import com.felixon.review_service.models.dtos.BookEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
@@ -16,7 +14,7 @@ public class BookEventConsumer {
 
     @KafkaListener(topics = "book-review-topic",
             groupId = "${spring.kafka.consumer.group-id}")
-    public void consume(BookEventDto bookEvent){
+    public void consume(BookEvent bookEvent){
         try {
             System.out.println("Book event received " + bookEvent);
 

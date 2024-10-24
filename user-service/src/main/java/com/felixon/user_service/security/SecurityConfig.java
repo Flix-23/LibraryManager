@@ -3,10 +3,8 @@ package com.felixon.user_service.security;
 import com.felixon.user_service.security.filter.JwtValidationFilter;
 import com.felixon.user_service.security.filter.UserAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.Ordered;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -15,12 +13,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
 
-import java.util.Arrays;
 
 @Configuration
 public class SecurityConfig {
@@ -41,10 +34,11 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception{
         return httpSecurity.authorizeHttpRequests((authz) -> authz
-                        .requestMatchers(HttpMethod.GET,"/api/users").permitAll()
-                        .requestMatchers(HttpMethod.GET,"/api/users/{username}").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/users/register").permitAll()
-                        .requestMatchers(HttpMethod.PUT,"/api/users/update/{username}").permitAll()
+                        .requestMatchers(HttpMethod.GET,"/api/v1/user").permitAll()
+                        .requestMatchers(HttpMethod.GET,"/api/v1/user/{username}").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/user/register").permitAll()
+                        .requestMatchers(HttpMethod.PUT,"/api/v1/user/update/{username}").permitAll()
+                        .requestMatchers(HttpMethod.DELETE,"/api/v1/user/delete/{username}").hasRole("ADMIN")
                         .requestMatchers(request -> request.getRequestURI().contains("/actuator/user")).permitAll()
                         .anyRequest().authenticated())
                 .addFilter(new UserAuthenticationFilter(authenticationManager()))

@@ -7,8 +7,7 @@ import com.felixon.review_service.models.entities.DBSequence;
 import com.felixon.review_service.repositories.BookReviewRepository;
 import com.felixon.review_service.services.consumer.BookEventConsumer;
 import com.felixon.review_service.services.consumer.UserEventConsumer;
-import io.micrometer.observation.Observation;
-import io.micrometer.observation.ObservationRegistry;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.query.Update;
@@ -32,9 +31,11 @@ public class BookReviewServiceImpl implements BookReviewService{
     @Autowired
     private MongoOperations mongoOperations;
 
+    private ModelMapper model = new ModelMapper();
+
     @Override
     @Transactional
-    public void addReview(BookReviewRequest reviewRequest) {
+    public BookReviewResponse addReview(BookReviewRequest reviewRequest) {
             var review = BookReview.builder()
                     .id(generateSequence(BookReview.SEQUENCE_NAME))
                     .bookTitle(BookEventConsumer.bookEventTitle)
@@ -44,6 +45,8 @@ public class BookReviewServiceImpl implements BookReviewService{
                     .build();
 
             this.reviewRepository.save(review);
+
+            return model.map(review, BookReviewResponse.class);
     }
 
     public long generateSequence(String seqName) {
@@ -57,41 +60,34 @@ public class BookReviewServiceImpl implements BookReviewService{
     @Override
     @Transactional(readOnly = true)
     public List<BookReviewResponse> getAllReview() {
-        var reviews = reviewRepository.findAllReview();
+        var reviews = reviewRepository.findAll();
                 
         return  reviews.stream().map(this::mapToBookReviewResponse).toList();
     }
 
     private BookReviewResponse mapToBookReviewResponse(BookReview bookReview) {
-
-        return BookReviewResponse.builder()
-                .id(bookReview.getId())
-                .bookTitle(bookReview.getBookTitle())
-                .username(bookReview.getUsername())
-                .qualification(bookReview.getQualification())
-                .comment(bookReview.getComment())
-                .date(bookReview.getDate())
-                .build();
+        return model.map(bookReview, BookReviewResponse.class);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<BookReview> findReviewByTitle(String title) {
-        return this.reviewRepository.findByBookTitle(title);
+    public BookReviewResponse findReviewByTitle(String title) {
+        Optional<BookReview> bookReview = this.reviewRepository.findByBookTitle(title);
+        return model.map(bookReview, BookReviewResponse.class);
     }
 
     @Override
     @Transactional
-    public Optional<BookReview> deleteReview(String username) {
+    public BookReviewResponse deleteReview(String username) {
         Optional<BookReview> optionalBookReview = reviewRepository.findByUsername(username);
         optionalBookReview.ifPresent(reviewRepository::delete);
 
-        return optionalBookReview;
+        return model.map(optionalBookReview, BookReviewResponse.class);
     }
 
     @Override
     @Transactional
-    public Optional<BookReview> updateReview(String username, BookReviewRequest bookReviewRequest) {
+    public BookReviewResponse updateReview(String username, BookReviewRequest bookReviewRequest) {
         Optional<BookReview> optionalBookReview = reviewRepository.findByUsername(username);
 
         optionalBookReview.ifPresent(bookReviewDB -> {
@@ -100,6 +96,6 @@ public class BookReviewServiceImpl implements BookReviewService{
 
             this.reviewRepository.save(bookReviewDB);
         });
-        return optionalBookReview;
+        return model.map(optionalBookReview, BookReviewResponse.class);
     }
 }

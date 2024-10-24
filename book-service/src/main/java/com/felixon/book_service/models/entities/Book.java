@@ -27,7 +27,6 @@ public class Book {
     @Column(name = "publication_date")
     private LocalDate datePublication;
     @Column(name = "author_name")
-    @NotBlank
     private String authorName;
     private boolean available;
 

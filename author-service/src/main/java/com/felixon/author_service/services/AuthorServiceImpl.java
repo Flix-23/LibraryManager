@@ -5,8 +5,11 @@ import com.felixon.author_service.models.dtos.AuthorRequest;
 import com.felixon.author_service.models.dtos.AuthorResponse;
 import com.felixon.author_service.models.entities.Author;
 import com.felixon.author_service.repositories.AuthorRepository;
+import com.felixon.author_service.services.consumer.UserConsumer;
+import com.felixon.author_service.services.publisher.AuthorEventPublisher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,53 +28,52 @@ public class AuthorServiceImpl implements AuthorService{
     @Autowired
     private AuthorEventPublisher authorEventPublisher;
 
+    private ModelMapper model = new ModelMapper();
+
 
     @Override
     @Transactional
-    public void addAuthor(AuthorRequest authorRequest){
-            var author = Author.builder()
-                    .name(UserConsumer.userEventName)
-                    .email(authorRequest.getEmail())
-                    .biography(authorRequest.getBiography())
-                    .nationality(authorRequest.getNationality())
-                    .build();
+    public AuthorResponse addAuthor(AuthorRequest authorRequest){
 
-        Author authorToEvent = this.authorRepository.save(author);
-        log.info("Author added {}", author);
+        authorRequest.setName(UserConsumer.userEventName);
+        var author = model.map(authorRequest, Author.class);
 
-        this.authorEventPublisher.publishAuthorEvent(new AuthorEvent(UserConsumer.userEventName,
-                authorToEvent.getEmail(), authorToEvent.getBiography(),
-                authorToEvent.getNationality()));
+        this.authorRepository.save(author);
+
+        this.authorEventPublisher.publishAuthorEvent(
+                new AuthorEvent(author.getName(),
+                author.getEmail(), author.getBiography(),
+                author.getNationality())
+        );
+
+
+
+        return model.map(author, AuthorResponse.class);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<AuthorResponse> getAllAuthor() {
-        var authors = authorRepository.findAllAuthor();
-
+        var authors = authorRepository.findAll();
 
         return authors.stream().map(this::mapToAuthorResponse).toList();
     }
 
     private AuthorResponse mapToAuthorResponse(Author author) {
-        return AuthorResponse.builder()
-                .id(author.getId())
-                .name(author.getName())
-                .email(author.getEmail())
-                .biography(author.getBiography())
-                .nationality(author.getNationality())
-                .build();
+        return model.map(author, AuthorResponse.class);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<Author> findByName(String name) {
-        return this.authorRepository.findByName(name);
+    public AuthorResponse findByName(String name) {
+         Optional<Author> author= this.authorRepository.findByName(name);
+
+        return model.map(author, AuthorResponse.class);
     }
 
     @Override
     @Transactional
-    public Optional<Author> updateAuthor(String name, AuthorRequest authorRequest) {
+    public AuthorResponse updateAuthor(String name, AuthorRequest authorRequest) {
         Optional<Author> optionalAuthor = authorRepository.findByName(name);
 
         if(optionalAuthor.isPresent()){
@@ -79,19 +81,21 @@ public class AuthorServiceImpl implements AuthorService{
             authorDB.setEmail(authorRequest.getEmail());
             authorDB.setBiography(authorRequest.getBiography());
             authorDB.setNationality(authorRequest.getNationality());
-            return Optional.of(authorRepository.save(authorDB));
+            authorRepository.save(authorDB);
         }
-        return optionalAuthor;
+
+        return model.map(optionalAuthor, AuthorResponse.class);
     }
 
     @Override
     @Transactional
-    public Optional<Author> deleteAuthor(String name) {
+    public AuthorResponse deleteAuthor(String name) {
+
         Optional<Author> optionalAuthor = authorRepository.findByName(name);
 
         optionalAuthor.ifPresent(authorRepository::delete);
 
-        return optionalAuthor;
+        return model.map(optionalAuthor, AuthorResponse.class);
     }
 
 }

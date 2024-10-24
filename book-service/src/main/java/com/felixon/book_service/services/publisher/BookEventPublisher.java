@@ -1,4 +1,4 @@
-package com.felixon.book_service.services;
+package com.felixon.book_service.services.publisher;
 
 import com.felixon.book_service.models.dtos.BookEvent;
 import org.springframework.beans.factory.annotation.Autowired;

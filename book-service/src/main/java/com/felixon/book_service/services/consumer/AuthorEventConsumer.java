@@ -1,4 +1,4 @@
-package com.felixon.book_service.services;
+package com.felixon.book_service.services.consumer;
 
 import com.felixon.book_service.models.dtos.AuthorEvent;
 import lombok.extern.slf4j.Slf4j;

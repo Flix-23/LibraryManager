@@ -1,4 +1,4 @@
 package com.felixon.user_service.models.dtos;
 
-public record UserEvent(Long userId, String username) {
+public record UserEvent(String username) {
 }

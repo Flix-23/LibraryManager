@@ -1,15 +1,16 @@
 package com.felixon.user_service.services;
 
 import com.felixon.user_service.models.dtos.UserEvent;
+import com.felixon.user_service.models.dtos.UserRequest;
+import com.felixon.user_service.models.dtos.UserResponse;
 import com.felixon.user_service.models.entities.Role;
 import com.felixon.user_service.models.entities.User;
 import com.felixon.user_service.repositories.RoleRepository;
 import com.felixon.user_service.repositories.UserRepository;
-import com.felixon.user_service.services.event_publication.UserToAuthorEvent;
-import io.micrometer.observation.Observation;
-import io.micrometer.observation.ObservationRegistry;
+import com.felixon.user_service.services.publisher.UserToAuthorEvent;
+import com.felixon.user_service.services.publisher.UserToOtherEvent;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,75 +33,82 @@ public class UserServiceImpl implements UserService{
     private PasswordEncoder passwordEncoder;
 
     @Autowired
-    private KafkaTemplate<String, UserEvent> kafkaTemplate;
-
-    @Autowired
     private UserToAuthorEvent userToAuthorEvent;
 
+    @Autowired
+    private UserToOtherEvent userToOtherEvent;
+
+    private ModelMapper model = new ModelMapper();
+
 
     @Override
     @Transactional(readOnly = true)
-    public List<User> getAllUser() {
+    public List<UserResponse> getAllUser() {
 
-        return (List<User>) userRepository.findAll();
+        var users = userRepository.findAll();
+
+        return users.stream().map(this::mapToUserResponse).toList();
+    }
+
+    private UserResponse mapToUserResponse(User author) {
+        return model.map(author, UserResponse.class);
+    }
+
+
+    @Override
+    @Transactional
+    public UserResponse addUser(UserRequest userRequest) {
+        Optional<Role> optionalRoleUser = roleRepository.findByName("ROLE_USER");
+        Set<Role> roles = new HashSet<>();
+        optionalRoleUser.ifPresent(roles::add);
+
+        var user = model.map(userRequest, User.class);
+
+        user.setRoles(roles);
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        this.userRepository.save(user);
+
+        userToOtherEvent.publishUser(new UserEvent(user.getUsername()));
+
+        return model.map(user, UserResponse.class);
+    }
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserResponse findUserByName(String username) {
+        Optional<User> user = this.userRepository.findByUsername(username);
+        return model.map(user, UserResponse.class);
     }
 
     @Override
     @Transactional
-    public User addUser(User user) {
-            Optional<Role> optionalRoleUser = roleRepository.findByName("ROLE_USER");
-            Set<Role> roles = new HashSet<>();
-
-            optionalRoleUser.ifPresent(roles::add);
-
-
-            user.setRoles(roles);
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
-
-            User userToEvent = this.userRepository.save(user);
-
-            var event = new UserEvent(userToEvent.getId(), userToEvent.getUsername());
-
-            publishUser(event);
-
-            return userToEvent;
-    }
-
-    public void publishUser(UserEvent event){
-        kafkaTemplate.send("user-topic", event);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Optional<User> findUserByName(String username) {
-        return this.userRepository.findByUsername(username);
-    }
-
-    @Override
-    @Transactional
-    public Optional<User> updateUser(String username, User user) {
+    public UserResponse updateUser(String username, UserRequest userRequest) {
         Optional<User> optionalUser = userRepository.findByUsername(username);
 
-        Set<Role> roles = new HashSet<>();
-
         optionalUser.ifPresent(userDB -> {
-            userDB.setUsername(user.getUsername());
-            userDB.setPassword(passwordEncoder.encode(user.getPassword()));
+            userDB.setUsername(userRequest.getUsername());
+            userDB.setPassword(passwordEncoder.encode(userRequest.getPassword()));
 
-            if (user.isAuthor()){
+            if (userRequest.isAuthor()){
                 Optional<Role> authorRole = roleRepository.findByName("ROLE_AUTHOR");
                 userDB.getRoles().add(authorRole.orElseThrow());
 
-                var event = new UserEvent(user.getId(), user.getUsername());
-                userToAuthorEvent.publishUserToAuthor(event);
+                userToAuthorEvent.publishUserToAuthor(new UserEvent(userRequest.getUsername()));
             }
 
             this.userRepository.save(userDB);
         });
 
-        return optionalUser;
+        return model.map(optionalUser, UserResponse.class);
     }
 
+    @Override
+    public UserResponse deleteUser(String username) {
+        Optional<User> user = this.userRepository.findByUsername(username);
+        user.ifPresent(userRepository::delete);
+        return model.map(user, UserResponse.class);
+    }
 
 
 }
