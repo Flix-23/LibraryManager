@@ -9,6 +9,8 @@ target/
 *.ear
 *.class
 
+/target
+
 ### STS ###
 .apt_generated
 .classpath

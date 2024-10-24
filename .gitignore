@@ -10,7 +10,6 @@ target/
 *.class
 
 .env
-/target
 
 ### STS ###
 .apt_generated
