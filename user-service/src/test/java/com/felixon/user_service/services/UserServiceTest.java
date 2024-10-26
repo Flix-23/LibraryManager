@@ -100,7 +100,7 @@ public class UserServiceTest {
         verify(this.userRepository).findAll();
     }
 
-    @ DisplayName("Test find user by name")
+    @DisplayName("Test find user by name")
     @Test
     void testFindByName_whenUserExist(){
 
